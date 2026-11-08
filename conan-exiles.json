@@ -1,0 +1,189 @@
+{
+    "type": "steam",
+    "display": "Conan Exiles",
+    "data": {
+        "admin_password": {
+            "type": "string",
+            "value": "",
+            "display": "Admin Password",
+            "required": false,
+            "userEdit": true
+        },
+        "max_nudity": {
+            "type": "integer",
+            "value": 2,
+            "display": "Maximum Nudity",
+            "desc": "0 = keine, 1 = teilweise, 2 = volle Nacktheit",
+            "required": false,
+            "userEdit": true
+        },
+        "max_players": {
+            "type": "integer",
+            "value": 40,
+            "display": "Maximum Player Count",
+            "required": true,
+            "userEdit": true
+        },
+        "port": {
+            "type": "integer",
+            "value": 7777,
+            "display": "Port",
+            "desc": "IPv4 Server Port (UDP). Port+1 (UDP) wird ebenfalls vom Spiel genutzt.",
+            "required": true,
+            "userEdit": false
+        },
+        "pvp_enabled": {
+            "type": "boolean",
+            "value": false,
+            "display": "PVP Enabled",
+            "required": false,
+            "userEdit": true
+        },
+        "query_port": {
+            "type": "integer",
+            "value": 27015,
+            "display": "Query Port",
+            "desc": "Steam Server Query Protocol (UDP)",
+            "required": true,
+            "userEdit": false
+        },
+        "server_message_of_the_day": {
+            "type": "string",
+            "value": "",
+            "display": "Server Message Of The Day",
+            "required": false,
+            "userEdit": true
+        },
+        "server_name": {
+            "type": "string",
+            "value": "Conan Exiles Server",
+            "display": "Server Name",
+            "desc": "Ohne Anführungszeichen eingeben",
+            "required": true,
+            "userEdit": true
+        },
+        "server_password": {
+            "type": "string",
+            "value": "",
+            "display": "Server Password",
+            "required": false,
+            "userEdit": true
+        }
+    },
+    "groups": [
+        {
+            "display": "Server Settings",
+            "description": "",
+            "variables": [
+                "server_name",
+                "server_password",
+                "admin_password",
+                "server_message_of_the_day",
+                "max_nudity",
+                "pvp_enabled"
+            ],
+            "order": 1
+        },
+        {
+            "display": "Runtime Attributes",
+            "description": "",
+            "variables": [
+                "max_players",
+                "port",
+                "query_port"
+            ],
+            "order": 2
+        }
+    ],
+    "install": [
+        {
+            "type": "command",
+            "commands": [
+                "/usr/games/steamcmd +login anonymous +quit",
+                "/usr/games/steamcmd +force_install_dir /pufferpanel +login anonymous +app_update 443030 validate +quit"
+            ]
+        }
+    ],
+    "uninstall": null,
+    "run": {
+        "command": [
+            {
+                "command": "/pufferpanel/ConanSandbox/Binaries/Linux/ConanSandboxServer-Linux-Shipping ConanSandbox -log -Port=${port} -QueryPort=${query_port} -MaxPlayers=${max_players} -ServerName=\"${server_name}\" -MULTIHOME=0.0.0.0",
+                "if": ""
+            }
+        ],
+        "stop": "^C",
+        "pre": [
+            {
+                "type": "command",
+                "commands": [
+                    "/usr/games/steamcmd +force_install_dir /pufferpanel +login anonymous +app_update 443030 +quit"
+                ]
+            },
+            {
+                "type": "command",
+                "commands": [
+                    "mkdir -p /pufferpanel/ConanSandbox/Saved/Config/LinuxServer",
+                    "touch /pufferpanel/ConanSandbox/Saved/Config/LinuxServer/ServerSettings.ini"
+                ]
+            },
+            {
+                "type": "alterfile",
+                "search": "\\A\\z",
+                "replace": "[ServerSettings]\n",
+                "file": "ConanSandbox/Saved/Config/LinuxServer/ServerSettings.ini",
+                "regex": true
+            },
+            {
+                "type": "alterfile",
+                "search": "(?m)^(ServerPassword|AdminPassword|ServerMessageOfTheDay|MaxNudity|PVPEnabled)=.*\\r?\\n?",
+                "replace": "",
+                "file": "ConanSandbox/Saved/Config/LinuxServer/ServerSettings.ini",
+                "regex": true
+            },
+            {
+                "type": "alterfile",
+                "search": "\\[ServerSettings\\]",
+                "replace": "[ServerSettings]\nServerPassword=${server_password}\nAdminPassword=${admin_password}\nServerMessageOfTheDay=${server_message_of_the_day}\nMaxNudity=${max_nudity}\nPVPEnabled=${pvp_enabled}",
+                "file": "ConanSandbox/Saved/Config/LinuxServer/ServerSettings.ini",
+                "regex": true
+            }
+        ],
+        "stdin": {
+            "type": "stdin"
+        },
+        "autostart": false,
+        "autorecover": false,
+        "autorestart": false
+    },
+    "environment": {
+        "type": "docker",
+        "bindings": {},
+        "containerRoot": "",
+        "image": "halalixy/steamcmd",
+        "networkName": "host",
+        "portBindings": []
+    },
+    "supportedEnvironments": [
+        {
+            "type": "docker",
+            "bindings": {},
+            "containerRoot": "",
+            "image": "halalixy/steamcmd",
+            "networkName": "host",
+            "portBindings": []
+        }
+    ],
+    "requirements": {},
+    "stats": {
+        "type": ""
+    },
+    "query": {
+        "type": ""
+    },
+    "keepAlive": {
+        "frequency": "",
+        "command": ""
+    },
+    "name": "conan"
+}
