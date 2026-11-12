@@ -1,6 +1,6 @@
 {
     "type": "steam",
-    "display": "Conan Exiles",
+    "display": "Conan Exiles Enhanced",
     "data": {
         "admin_password": {
             "type": "string",
