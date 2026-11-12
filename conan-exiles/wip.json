@@ -190,7 +190,7 @@
                 "file": "ConanSandbox/Saved/Config/LinuxServer/ServerSettings.ini",
                 "regex": true,
                 "replace": "",
-                "search": "(?m)^(ServerPassword|AdminPassword|ServerMessageOfTheDay|MaxNudity|PVPEnabled|ServerModList)=.*\\r?\\n?"
+                "search": "(?m)^(ServerName|ServerPassword|AdminPassword|ServerMessageOfTheDay|MaxNudity|PVPEnabled|ServerModList)=.*\\r?\\n?"
             },
             {
                 "type": "alterfile",
@@ -226,7 +226,8 @@
         },
         "autostart": false,
         "autorecover": false,
-        "autorestart": false
+        "autorestart": false,
+        "post": []
     },
     "environment": {
         "type": "docker",
