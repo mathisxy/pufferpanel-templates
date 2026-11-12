@@ -1,4 +1,3 @@
-
 {
     "type": "steam",
     "id": "95d29928",
@@ -8,6 +7,13 @@
             "type": "string",
             "value": "",
             "display": "Admin Password",
+            "required": false,
+            "userEdit": true
+        },
+        "manage_mods": {
+            "type": "boolean",
+            "value": true,
+            "display": "Manage Mods with Pufferpanel",
             "required": false,
             "userEdit": true
         },
@@ -26,13 +32,13 @@
             "required": true,
             "userEdit": true
         },
-        "mod_list_name": {
+        "mod_list": {
             "type": "string",
-            "value": "modlist.txt",
-            "display": "Mod List Name",
-            "desc": "Path: ConanSanbox/Mods/",
+            "value": "3722388367, 3780978588, 3720904511",
+            "display": "Mod List",
+            "desc": "A list in CSV format (comma seperated values) of mod IDs to install",
             "required": false,
-            "userEdit": false
+            "userEdit": true
         },
         "port": {
             "type": "integer",
@@ -90,7 +96,8 @@
                 "server_message_of_the_day",
                 "max_nudity",
                 "pvp_enabled",
-                "mod_list_name"
+                "manage_mods",
+                "mod_list"
             ],
             "order": 1
         },
@@ -139,11 +146,36 @@
                 ]
             },
             {
-                "if": "mod_list_name != \"\"",
+                "if": "manage_mods == true",
+                "type": "writefile",
+                "text": "${mod_list}",
+                "target": "mods.txt"
+            },
+            {
+                "if": "manage_mods == true",
+                "type": "alterfile",
+                "file": "mods.txt",
+                "regex": true,
+                "replace": "\n",
+                "search": ","
+            },
+            {
+                "if": "manage_mods == true",
+                "type": "mkdir",
+                "target": "ConanSandbox/Mods"
+            },
+            {
+                "if": "manage_mods == true",
+                "type": "writefile",
+                "target": "ConanSandbox/Mods/modlist.txt",
+                "text": ""
+            },
+            {
+                "if": "manage_mods == true",
                 "type": "command",
                 "commands": [
-                    "mkdir ConanSandbox/Mods",
-                    "touch ConanSandbox/Mods/${mod_list_name}"
+                    "xargs -a mods.txt -I {} /usr/games/steamcmd +force_install_dir /pufferpanel +login anonymous +workshop_download_item 440900 {} +quit",
+                    "sh -c 'xargs -a /pufferpanel/mods.txt -I {} find /pufferpanel/steamapps/workshop/content/440900/{} -name *.pak >> /pufferpanel/ConanSandbox/Mods/modlist.txt'"
                 ]
             },
             {
@@ -158,21 +190,21 @@
                 "file": "ConanSandbox/Saved/Config/LinuxServer/ServerSettings.ini",
                 "regex": true,
                 "replace": "",
-                "search": "(?m)^(ServerPassword|ServerMessageOfTheDay|MaxNudity|PVPEnabled|ServerModList)=.*\\r?\\n?"
+                "search": "(?m)^(ServerPassword|AdminPassword|ServerMessageOfTheDay|MaxNudity|PVPEnabled|ServerModList)=.*\\r?\\n?"
             },
             {
                 "type": "alterfile",
                 "file": "ConanSandbox/Saved/Config/LinuxServer/ServerSettings.ini",
                 "regex": true,
-                "replace": "[ServerSettings]\nServerPassword=${server_password}\nServerMessageOfTheDay=${server_message_of_the_day}\nMaxNudity=${max_nudity}\nPVPEnabled=${pvp_enabled}\nServerModList=${mod_list_name}",
+                "replace": "[ServerSettings]\nServerPassword=${server_password}\nAdminPassword=${admin_password}\nServerMessageOfTheDay=${server_message_of_the_day}\nMaxNudity=${max_nudity}\nPVPEnabled=${pvp_enabled}\nServerModList=modlist.txt",
                 "search": "\\[ServerSettings\\]"
             },
             {
                 "type": "alterfile",
+                "search": "\\A\\z",
                 "file": "ConanSandbox/Saved/Config/LinuxServer/Engine.ini",
                 "regex": true,
-                "replace": "[OnlineSubsystem]",
-                "search": "\\A\\z"
+                "replace": "[OnlineSubsystem]"
             },
             {
                 "type": "alterfile",
@@ -183,10 +215,10 @@
             },
             {
                 "type": "alterfile",
+                "replace": "[OnlineSubsystem]\nServerName=${server_name}",
+                "search": "\\[OnlineSubsystem\\]",
                 "file": "ConanSandbox/Saved/Config/LinuxServer/Engine.ini",
-                "regex": true,
-                "replace": "[OnlineSubsystem]\nServerName=${server_name}\nAdminPassword=${admin_password}\n",
-                "search": "\\[OnlineSubsystem\\]"
+                "regex": true
             }
         ],
         "stdin": {
@@ -198,11 +230,11 @@
     },
     "environment": {
         "type": "docker",
+        "bindings": {},
         "containerRoot": "",
         "image": "halalixy/steamcmd",
         "networkName": "host",
-        "portBindings": [],
-        "bindings": {}
+        "portBindings": []
     },
     "supportedEnvironments": [
         {
