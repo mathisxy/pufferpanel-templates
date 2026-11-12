@@ -9,9 +9,16 @@
             "required": false,
             "userEdit": true
         },
+        "manage_mods": {
+            "type": "boolean",
+            "value": false,
+            "display": "Manage Mods",
+            "required": false,
+            "userEdit": true
+        },
         "max_nudity": {
             "type": "integer",
-            "value": 2,
+            "value": 0,
             "display": "Maximum Nudity",
             "desc": "0 = keine, 1 = teilweise, 2 = volle Nacktheit",
             "required": false,
@@ -22,6 +29,14 @@
             "value": 40,
             "display": "Maximum Player Count",
             "required": true,
+            "userEdit": true
+        },
+        "mod_list": {
+            "type": "string",
+            "value": "",
+            "display": "Mod List",
+            "desc": "A list in CSV format (comma seperated values) of mod IDs to install",
+            "required": false,
             "userEdit": true
         },
         "port": {
@@ -80,7 +95,9 @@
                 "admin_password",
                 "server_message_of_the_day",
                 "max_nudity",
-                "pvp_enabled"
+                "pvp_enabled",
+                "manage_mods",
+                "mod_list"
             ],
             "order": 1
         },
@@ -112,8 +129,8 @@
                 "if": ""
             }
         ],
-        "stop": "^C",
-        "pre": [
+        "stopCode": 2,
+                "pre": [
             {
                 "type": "command",
                 "commands": [
@@ -124,28 +141,83 @@
                 "type": "command",
                 "commands": [
                     "mkdir -p /pufferpanel/ConanSandbox/Saved/Config/LinuxServer",
-                    "touch /pufferpanel/ConanSandbox/Saved/Config/LinuxServer/ServerSettings.ini"
+                    "touch /pufferpanel/ConanSandbox/Saved/Config/LinuxServer/ServerSettings.ini",
+                    "touch /pufferpanel/ConanSandbox/Saved/Config/LinuxServer/Engine.ini"
+                ]
+            },
+            {
+                "if": "manage_mods == true",
+                "type": "writefile",
+                "text": "${mod_list}",
+                "target": "mods.txt"
+            },
+            {
+                "if": "manage_mods == true",
+                "type": "alterfile",
+                "file": "mods.txt",
+                "regex": true,
+                "replace": "\n",
+                "search": ","
+            },
+            {
+                "if": "manage_mods == true",
+                "type": "mkdir",
+                "target": "ConanSandbox/Mods"
+            },
+            {
+                "if": "manage_mods == true",
+                "type": "writefile",
+                "target": "ConanSandbox/Mods/modlist.txt",
+                "text": ""
+            },
+            {
+                "if": "manage_mods == true",
+                "type": "command",
+                "commands": [
+                    "xargs -a mods.txt -I {} /usr/games/steamcmd +force_install_dir /pufferpanel +login anonymous +workshop_download_item 440900 {} +quit",
+                    "sh -c 'xargs -a /pufferpanel/mods.txt -I {} find /pufferpanel/steamapps/workshop/content/440900/{} -name *.pak >> /pufferpanel/ConanSandbox/Mods/modlist.txt'"
                 ]
             },
             {
                 "type": "alterfile",
-                "search": "\\A\\z",
+                "file": "ConanSandbox/Saved/Config/LinuxServer/ServerSettings.ini",
+                "regex": true,
                 "replace": "[ServerSettings]\n",
-                "file": "ConanSandbox/Saved/Config/LinuxServer/ServerSettings.ini",
-                "regex": true
+                "search": "\\A\\z"
             },
             {
                 "type": "alterfile",
-                "search": "(?m)^(ServerPassword|AdminPassword|ServerMessageOfTheDay|MaxNudity|PVPEnabled)=.*\\r?\\n?",
+                "file": "ConanSandbox/Saved/Config/LinuxServer/ServerSettings.ini",
+                "regex": true,
                 "replace": "",
+                "search": "(?m)^(ServerName|ServerPassword|AdminPassword|ServerMessageOfTheDay|MaxNudity|PVPEnabled|ServerModList)=.*\\r?\\n?"
+            },
+            {
+                "type": "alterfile",
                 "file": "ConanSandbox/Saved/Config/LinuxServer/ServerSettings.ini",
+                "regex": true,
+                "replace": "[ServerSettings]\nServerPassword=${server_password}\nAdminPassword=${admin_password}\nServerMessageOfTheDay=${server_message_of_the_day}\nMaxNudity=${max_nudity}\nPVPEnabled=${pvp_enabled}\nServerModList=modlist.txt",
+                "search": "\\[ServerSettings\\]"
+            },
+            {
+                "type": "alterfile",
+                "search": "\\A\\z",
+                "file": "ConanSandbox/Saved/Config/LinuxServer/Engine.ini",
+                "regex": true,
+                "replace": "[OnlineSubsystem]"
+            },
+            {
+                "type": "alterfile",
+                "replace": "",
+                "search": "(?m)^(AdminPassword|ServerName)=.*\\r?\\n?",
+                "file": "ConanSandbox/Saved/Config/LinuxServer/Engine.ini",
                 "regex": true
             },
             {
                 "type": "alterfile",
-                "search": "\\[ServerSettings\\]",
-                "replace": "[ServerSettings]\nServerPassword=${server_password}\nAdminPassword=${admin_password}\nServerMessageOfTheDay=${server_message_of_the_day}\nMaxNudity=${max_nudity}\nPVPEnabled=${pvp_enabled}",
-                "file": "ConanSandbox/Saved/Config/LinuxServer/ServerSettings.ini",
+                "replace": "[OnlineSubsystem]\nServerName=${server_name}",
+                "search": "\\[OnlineSubsystem\\]",
+                "file": "ConanSandbox/Saved/Config/LinuxServer/Engine.ini",
                 "regex": true
             }
         ],
@@ -185,5 +257,5 @@
         "frequency": "",
         "command": ""
     },
-    "name": "conan"
+    "name": "conan_exiles"
 }
