@@ -93,7 +93,7 @@
     {
       "type": "command",
       "commands": [
-        "steamcmd +@sSteamCmdForcePlatformType windows +force_install_dir /pufferpanel +login anonymous +app_update 2278520 validate +quit"
+        "steamcmd +@sSteamCmdForcePlatformType windows +login anonymous +force_install_dir /pufferpanel +app_update 2278520 validate +quit"
       ]
     },
     {
@@ -120,7 +120,7 @@
       {
         "type": "command",
         "commands": [
-          "steamcmd +@sSteamCmdForcePlatformType windows +force_install_dir /pufferpanel +login anonymous +app_update 2278520 +quit"
+          "steamcmd +@sSteamCmdForcePlatformType windows +login anonymous +force_install_dir /pufferpanel +app_update 2278520 +quit"
         ]
       },
       {
