@@ -5,7 +5,7 @@
     "data": {
         "admin_password": {
             "type": "string",
-            "value": "",
+            "value": "#4#3#2#1",
             "display": "Admin Password",
             "required": false,
             "userEdit": true
@@ -184,10 +184,10 @@
             },
             {
                 "type": "alterfile",
+                "file": "ConanSandbox/Saved/Config/LinuxServer/ServerSettings.ini",
                 "regex": true,
                 "replace": "",
-                "search": "(?m)^(ServerName|ServerPassword|AdminPassword|ServerMessageOfTheDay|MaxNudity|PVPEnabled|ServerModList)=.*\\r?\\n?",
-                "file": "ConanSandbox/Saved/Config/LinuxServer/ServerSettings.ini"
+                "search": "(?m)^(ServerName|ServerPassword|AdminPassword|ServerMessageOfTheDay|MaxNudity|PVPEnabled|ServerModList)=.*\\r?\\n?"
             },
             {
                 "type": "alterfile",
@@ -212,10 +212,10 @@
             },
             {
                 "type": "alterfile",
+                "regex": true,
                 "replace": "[OnlineSubsystem]\nServerName=${server_name}",
                 "search": "\\[OnlineSubsystem\\]",
-                "file": "ConanSandbox/Saved/Config/LinuxServer/Engine.ini",
-                "regex": true
+                "file": "ConanSandbox/Saved/Config/LinuxServer/Engine.ini"
             }
         ],
         "stdin": {
@@ -227,11 +227,11 @@
     },
     "environment": {
         "type": "docker",
+        "bindings": {},
+        "containerRoot": "",
         "image": "halalixy/steamcmd",
         "networkName": "host",
-        "portBindings": [],
-        "bindings": {},
-        "containerRoot": ""
+        "portBindings": []
     },
     "supportedEnvironments": [
         {
