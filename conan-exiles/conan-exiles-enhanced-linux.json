@@ -241,7 +241,7 @@
             "type": "docker",
             "bindings": {},
             "containerRoot": "",
-            "image": "halalixy/steamcmd",
+            "image": "steamcmd/steamcmd:latest",
             "networkName": "host",
             "portBindings": []
         }
