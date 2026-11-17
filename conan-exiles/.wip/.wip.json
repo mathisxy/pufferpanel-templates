@@ -156,8 +156,8 @@
             {
                 "if": "manage_mods == true",
                 "type": "writefile",
-                "target": "ConanSandbox/Mods/modlist.txt",
-                "text": ""
+                "text": "",
+                "target": "ConanSandbox/Mods/modlist.txt"
             },
             {
                 "if": "manage_mods == true",
@@ -177,45 +177,53 @@
             },
             {
                 "type": "alterfile",
-                "file": "ConanSandbox/Saved/Config/LinuxServer/ServerSettings.ini",
-                "regex": true,
                 "replace": "[ServerSettings]\n",
-                "search": "\\A\\z"
+                "search": "\\A\\z",
+                "file": "ConanSandbox/Saved/Config/LinuxServer/ServerSettings.ini",
+                "regex": true
+            },
+            {
+                "type": "alterfile",
+                "search": "(?m)^(ServerName|ServerPassword|AdminPassword|ServerMessageOfTheDay|MaxNudity|PVPEnabled|ServerModList)=.*\\r?\\n?",
+                "file": "ConanSandbox/Saved/Config/LinuxServer/ServerSettings.ini",
+                "regex": true,
+                "replace": ""
             },
             {
                 "type": "alterfile",
                 "file": "ConanSandbox/Saved/Config/LinuxServer/ServerSettings.ini",
                 "regex": true,
-                "replace": "",
-                "search": "(?m)^(ServerName|ServerPassword|AdminPassword|ServerMessageOfTheDay|MaxNudity|PVPEnabled|ServerModList)=.*\\r?\\n?"
-            },
-            {
-                "type": "alterfile",
-                "file": "ConanSandbox/Saved/Config/LinuxServer/ServerSettings.ini",
-                "regex": true,
-                "replace": "[ServerSettings]\nServerPassword=${server_password}\nAdminPassword=${admin_password}\nServerMessageOfTheDay=${server_message_of_the_day}\nMaxNudity=${max_nudity}\nPVPEnabled=${pvp_enabled}\nServerModList=modlist.txt",
+                "replace": "[ServerSettings]\nServerPassword=${server_password}\nAdminPassword=${admin_password}\nServerMessageOfTheDay=${server_message_of_the_day}\nMaxNudity=${max_nudity}\nPVPEnabled=${pvp_enabled}",
                 "search": "\\[ServerSettings\\]"
+            },
+            {
+                "type": "alterfile",
+                "if": "manage_mods == true",
+                "file": "ConanSandbox/Saved/Config/LinuxServer/ServerSettings.ini",
+                "regex": true,
+                "search": "\\[ServerSettings\\]",
+                "replace": "[ServerSettings]\nServerModList=modlist.txt"
+            },
+            {
+                "type": "alterfile",
+                "regex": true,
+                "replace": "[OnlineSubsystem]",
+                "search": "\\A\\z",
+                "file": "ConanSandbox/Saved/Config/LinuxServer/Engine.ini"
             },
             {
                 "type": "alterfile",
                 "file": "ConanSandbox/Saved/Config/LinuxServer/Engine.ini",
                 "regex": true,
-                "replace": "[OnlineSubsystem]",
-                "search": "\\A\\z"
-            },
-            {
-                "type": "alterfile",
-                "regex": true,
                 "replace": "",
-                "search": "(?m)^(AdminPassword|ServerName)=.*\\r?\\n?",
-                "file": "ConanSandbox/Saved/Config/LinuxServer/Engine.ini"
+                "search": "(?m)^(AdminPassword|ServerName)=.*\\r?\\n?"
             },
             {
                 "type": "alterfile",
+                "file": "ConanSandbox/Saved/Config/LinuxServer/Engine.ini",
                 "regex": true,
                 "replace": "[OnlineSubsystem]\nServerName=${server_name}",
-                "search": "\\[OnlineSubsystem\\]",
-                "file": "ConanSandbox/Saved/Config/LinuxServer/Engine.ini"
+                "search": "\\[OnlineSubsystem\\]"
             }
         ],
         "stdin": {
@@ -223,24 +231,25 @@
         },
         "autostart": false,
         "autorecover": false,
-        "autorestart": false
+        "autorestart": false,
+        "post": []
     },
     "environment": {
         "type": "docker",
+        "networkName": "host",
+        "portBindings": [],
         "bindings": {},
         "containerRoot": "",
-        "image": "halalixy/steamcmd",
-        "networkName": "host",
-        "portBindings": []
+        "image": "halalixy/steamcmd"
     },
     "supportedEnvironments": [
         {
             "type": "docker",
+            "portBindings": [],
             "bindings": {},
             "containerRoot": "",
             "image": "halalixy/steamcmd",
-            "networkName": "host",
-            "portBindings": []
+            "networkName": "host"
         }
     ],
     "requirements": {},
