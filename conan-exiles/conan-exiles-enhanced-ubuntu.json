@@ -18,12 +18,26 @@
             "userEdit": true
         },
         "max_nudity": {
-            "type": "integer",
-            "value": 0,
+            "type": "options",
+            "value": "0",
             "display": "Maximum Nudity",
             "desc": "0 = None, 1 = Partial, 2 = Full",
             "required": false,
-            "userEdit": true
+            "userEdit": true,
+            "options": [
+                {
+                    "value": "0",
+                    "display": "None"
+                },
+                {
+                    "value": "1",
+                    "display": "Partial"
+                },
+                {
+                    "value": "2",
+                    "display": "Full"
+                }
+            ]
         },
         "max_players": {
             "type": "integer",
@@ -183,25 +197,33 @@
             },
             {
                 "type": "alterfile",
-                "file": "ConanSandbox/Saved/Config/LinuxServer/ServerSettings.ini",
                 "regex": true,
                 "replace": "",
-                "search": "(?m)^(ServerName|ServerPassword|AdminPassword|ServerMessageOfTheDay|MaxNudity|PVPEnabled|ServerModList)=.*\\r?\\n?"
+                "search": "(?m)^(ServerName|ServerPassword|AdminPassword|ServerMessageOfTheDay|MaxNudity|PVPEnabled)=.*\\r?\\n?",
+                "file": "ConanSandbox/Saved/Config/LinuxServer/ServerSettings.ini"
             },
             {
                 "type": "alterfile",
-                "file": "ConanSandbox/Saved/Config/LinuxServer/ServerSettings.ini",
-                "regex": true,
                 "replace": "[ServerSettings]\nServerPassword=${server_password}\nAdminPassword=${admin_password}\nServerMessageOfTheDay=${server_message_of_the_day}\nMaxNudity=${max_nudity}\nPVPEnabled=${pvp_enabled}",
-                "search": "\\[ServerSettings\\]"
+                "search": "\\[ServerSettings\\]",
+                "file": "ConanSandbox/Saved/Config/LinuxServer/ServerSettings.ini",
+                "regex": true
             },
             {
                 "type": "alterfile",
                 "if": "manage_mods == true",
                 "file": "ConanSandbox/Saved/Config/LinuxServer/ServerSettings.ini",
                 "regex": true,
-                "search": "\\[ServerSettings\\]",
-                "replace": "[ServerSettings]\nServerModList=modlist.txt"
+                "search": "(?m)^(ServerModList)=.*\\r?\\n?",
+                "replace": ""
+            },
+            {
+                "if": "manage_mods == true",
+                "type": "alterfile",
+                "file": "ConanSandbox/Saved/Config/LinuxServer/ServerSettings.ini",
+                "regex": true,
+                "replace": "[ServerSettings]\nServerModList=modlist.txt",
+                "search": "\\[ServerSettings\\]"
             },
             {
                 "type": "alterfile",
