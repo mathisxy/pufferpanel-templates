@@ -11,8 +11,9 @@
         },
         "manage_mods": {
             "type": "boolean",
-            "value": false,
-            "display": "Manage Mods",
+            "value": true,
+            "display": "Manage Mods with Pufferpanel",
+            "desc": "Define the used Mods in \"mods.txt\"",
             "required": false,
             "userEdit": true
         },
@@ -88,7 +89,7 @@
                 "server_message_of_the_day",
                 "max_nudity",
                 "pvp_enabled",
-                "manage_mods",
+                "manage_mods"
             ],
             "order": 1
         },
