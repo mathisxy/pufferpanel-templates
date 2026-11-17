@@ -5,33 +5,33 @@
   "data": {
     "serverName": {
       "type": "string",
-      "value": "Mein Enshrouded Server",
-      "display": "Servername",
-      "desc": "Wird in der Serverliste im Spiel angezeigt.",
+      "value": "Enshrouded Server",
+      "display": "Server Name",
+      "desc": "Shown in the in-game server list.",
       "required": true,
       "userEdit": true
     },
     "queryPort": {
       "type": "integer",
       "value": 15637,
-      "display": "Query-Port (UDP)",
-      "desc": "Einziger Port des Servers (UDP, Default 15637). Pro Server eindeutig vergeben, z.B. 15637, 15638, ...",
+      "display": "Query Port",
+      "desc": "The only port the server uses (UDP). Must be unique per server, e.g. 15637, 15638, ...",
       "required": true,
       "userEdit": true
     },
     "slotCount": {
       "type": "integer",
       "value": 16,
-      "display": "Spieler-Slots",
-      "desc": "Maximale Spielerzahl (1-16).",
+      "display": "Player Slots",
+      "desc": "Maximum number of players (1-16).",
       "required": true,
       "userEdit": true
     },
     "gameSettingsPreset": {
       "type": "option",
       "value": "Default",
-      "display": "Schwierigkeit",
-      "desc": "Default, Relaxed, Hard oder Survival. Bei Custom werden die Einzelwerte in der enshrouded_server.json gesetzt und beim Start nicht angefasst.",
+      "display": "Difficulty Preset",
+      "desc": "With Custom, edit gameSettings in enshrouded_server.json. It is left untouched on start.",
       "required": true,
       "userEdit": true,
       "options": [
@@ -45,46 +45,46 @@
     "enableVoiceChat": {
       "type": "boolean",
       "value": false,
-      "display": "Voice-Chat aktivieren",
+      "display": "Enable Voice Chat",
       "required": false,
       "userEdit": true
     },
     "enableTextChat": {
       "type": "boolean",
       "value": false,
-      "display": "Text-Chat aktivieren",
+      "display": "Enable Text Chat",
       "required": false,
       "userEdit": true
     },
     "adminPassword": {
       "type": "string",
       "value": "",
-      "display": "Passwort Gruppe Admin",
-      "desc": "Admin-Rechte (kick/ban, Inventare, Welt und Bauen).",
+      "display": "Admin Group Password",
+      "desc": "Kick/ban, open inventories, edit world and base.",
       "required": true,
       "userEdit": true
     },
     "friendPassword": {
       "type": "string",
       "value": "",
-      "display": "Passwort Gruppe Friend",
-      "desc": "Bauen + Inventare oeffnen, kein kick/ban.",
+      "display": "Friend Group Password",
+      "desc": "Open inventories, edit world and base. No kick/ban.",
       "required": true,
       "userEdit": true
     },
     "guestPassword": {
       "type": "string",
       "value": "",
-      "display": "Passwort Gruppe Guest",
-      "desc": "Nur joinen, keine Aenderungen.",
+      "display": "Guest Group Password",
+      "desc": "Join only, no changes.",
       "required": true,
       "userEdit": true
     },
     "visitorPassword": {
       "type": "string",
       "value": "",
-      "display": "Passwort Gruppe Visitor",
-      "desc": "Nur joinen, keine Aenderungen.",
+      "display": "Visitor Group Password",
+      "desc": "Join only, no changes.",
       "required": true,
       "userEdit": true
     }
@@ -136,13 +136,12 @@
       {
         "type": "writefile",
         "target": "update_config.jq",
-        "text": "def req(k): env[k] // error(\"missing environment variable \" + k);\ndef grp(gname; pwvar; perms):\n  if any(.userGroups[]; .name == gname)\n  then .userGroups |= map(if .name == gname then .password = req(pwvar) else . end)\n  else .userGroups += [{name: gname, password: req(pwvar)} + perms]\n  end;\n.name = req(\"ENSH_NAME\")\n| .saveDirectory //= \"./savegame\"\n| .logDirectory //= \"./logs\"\n| .ip //= \"0.0.0.0\"\n| .queryPort = (req(\"ENSH_QUERY_PORT\") | tonumber)\n| .slotCount = (req(\"ENSH_SLOT_COUNT\") | tonumber)\n| .voiceChatMode //= \"Proximity\"\n| .enableVoiceChat = (req(\"ENSH_VOICE_CHAT\") == \"true\")\n| .enableTextChat = (req(\"ENSH_TEXT_CHAT\") == \"true\")\n| .gameSettingsPreset = req(\"ENSH_PRESET\")\n| .tags //= []\n| .gameSettings //= {}\n| .bannedAccounts //= []\n| .userGroups //= []\n| grp(\"Admin\"; \"ENSH_PW_ADMIN\"; {canKickBan: true, canAccessInventories: true, canEditWorld: true, canEditBase: true, canExtendBase: true, reservedSlots: 1})\n| grp(\"Friend\"; \"ENSH_PW_FRIEND\"; {canKickBan: false, canAccessInventories: true, canEditWorld: true, canEditBase: true, canExtendBase: true, reservedSlots: 3})\n| grp(\"Guest\"; \"ENSH_PW_GUEST\"; {canKickBan: false, canAccessInventories: false, canEditWorld: false, canEditBase: false, canExtendBase: false, reservedSlots: 0})\n| grp(\"Visitor\"; \"ENSH_PW_VISITOR\"; {canKickBan: false, canAccessInventories: false, canEditWorld: false, canEditBase: false, canExtendBase: false, reservedSlots: 0})\n| if ([.userGroups[].password] | length) == ([.userGroups[].password] | unique | length) then . else error(\"group passwords must be unique\") end\n"
+        "text": "def req(k): env[k] // error(\"missing environment variable \" + k);\ndef upd(k; v): if has(k) then .[k] = v else . end;\ndef pw(gname; v): if has(\"userGroups\") then .userGroups |= map(if .name == gname and has(\"password\") then .password = v else . end) else . end;\nupd(\"name\"; req(\"ENSH_NAME\"))\n| upd(\"queryPort\"; req(\"ENSH_QUERY_PORT\") | tonumber)\n| upd(\"slotCount\"; req(\"ENSH_SLOT_COUNT\") | tonumber)\n| upd(\"enableVoiceChat\"; req(\"ENSH_VOICE_CHAT\") == \"true\")\n| upd(\"enableTextChat\"; req(\"ENSH_TEXT_CHAT\") == \"true\")\n| upd(\"gameSettingsPreset\"; req(\"ENSH_PRESET\"))\n| pw(\"Admin\"; req(\"ENSH_PW_ADMIN\"))\n| pw(\"Friend\"; req(\"ENSH_PW_FRIEND\"))\n| pw(\"Guest\"; req(\"ENSH_PW_GUEST\"))\n| pw(\"Visitor\"; req(\"ENSH_PW_VISITOR\"))\n| if ([.userGroups[]? | .password // empty] | length) == ([.userGroups[]? | .password // empty] | unique | length) then . else error(\"group passwords must be unique\") end\n"
       },
       {
         "type": "command",
         "commands": [
-          "sh -c \"test -f /pufferpanel/enshrouded_server.json || echo '{}' > /pufferpanel/enshrouded_server.json\"",
-          "sh -c \"jq -f /pufferpanel/update_config.jq /pufferpanel/enshrouded_server.json > /pufferpanel/enshrouded_server.json.new && mv /pufferpanel/enshrouded_server.json.new /pufferpanel/enshrouded_server.json\""
+          "sh -c \"if [ -f /pufferpanel/enshrouded_server.json ]; then jq -f /pufferpanel/update_config.jq /pufferpanel/enshrouded_server.json > /pufferpanel/enshrouded_server.json.new && mv /pufferpanel/enshrouded_server.json.new /pufferpanel/enshrouded_server.json; fi\""
         ]
       }
     ],
@@ -167,7 +166,7 @@
   "groups": [
     {
       "display": "Server",
-      "description": "Grundeinstellungen des Enshrouded-Servers",
+      "description": "Written on start into existing keys of enshrouded_server.json. The game creates that file on its first start, so these apply from the second start.",
       "variables": [
         "serverName",
         "queryPort",
@@ -179,8 +178,8 @@
       "order": 1
     },
     {
-      "display": "Passwoerter (Gruppen)",
-      "description": "Das Passwort beim Beitreten bestimmt die Gruppe und damit die Rechte. Die vier Passwoerter muessen unterschiedlich sein.",
+      "display": "Group Passwords",
+      "description": "Only applied to groups of the same name that already exist in the config. All passwords must differ.",
       "variables": [
         "adminPassword",
         "friendPassword",
