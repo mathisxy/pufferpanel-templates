@@ -80,7 +80,7 @@
             "type": "string",
             "value": "Conan Exiles Server",
             "display": "Server Name",
-            "desc": "Do not use \"",
+            "desc": "Do not use double quotes (\")",
             "required": true,
             "userEdit": true
         },
