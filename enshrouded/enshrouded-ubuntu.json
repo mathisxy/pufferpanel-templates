@@ -1,7 +1,7 @@
 {
-  "name": "enshrouded-ubuntu",
-  "type": "enshrouded",
-  "display": "Enshrouded - Dedicated Server (Docker)",
+  "name": "enshrouded",
+  "type": "steam",
+  "display": "Enshrouded Server",
   "data": {
     "serverName": {
       "type": "string",
