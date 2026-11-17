@@ -1,1 +1,193 @@
-
+{
+  "name": "enshrouded-ubuntu",
+  "type": "enshrouded",
+  "display": "Enshrouded - Dedicated Server (Docker)",
+  "data": {
+    "serverName": {
+      "type": "string",
+      "value": "Mein Enshrouded Server",
+      "display": "Servername",
+      "desc": "Wird in der Serverliste im Spiel angezeigt.",
+      "required": true,
+      "userEdit": true
+    },
+    "queryPort": {
+      "type": "integer",
+      "value": 15637,
+      "display": "Query-Port (UDP)",
+      "desc": "Einziger Port des Servers (UDP, Default 15637). Pro Server eindeutig vergeben, z.B. 15637, 15638, ...",
+      "required": true,
+      "userEdit": true
+    },
+    "slotCount": {
+      "type": "integer",
+      "value": 16,
+      "display": "Spieler-Slots",
+      "desc": "Maximale Spielerzahl (1-16).",
+      "required": true,
+      "userEdit": true
+    },
+    "gameSettingsPreset": {
+      "type": "option",
+      "value": "Default",
+      "display": "Schwierigkeit",
+      "desc": "Default, Relaxed, Hard oder Survival. Bei Custom werden die Einzelwerte in der enshrouded_server.json gesetzt und beim Start nicht angefasst.",
+      "required": true,
+      "userEdit": true,
+      "options": [
+        { "value": "Default", "display": "Default" },
+        { "value": "Relaxed", "display": "Relaxed" },
+        { "value": "Hard", "display": "Hard" },
+        { "value": "Survival", "display": "Survival" },
+        { "value": "Custom", "display": "Custom" }
+      ]
+    },
+    "enableVoiceChat": {
+      "type": "boolean",
+      "value": false,
+      "display": "Voice-Chat aktivieren",
+      "required": false,
+      "userEdit": true
+    },
+    "enableTextChat": {
+      "type": "boolean",
+      "value": false,
+      "display": "Text-Chat aktivieren",
+      "required": false,
+      "userEdit": true
+    },
+    "adminPassword": {
+      "type": "string",
+      "value": "",
+      "display": "Passwort Gruppe Admin",
+      "desc": "Admin-Rechte (kick/ban, Inventare, Welt und Bauen).",
+      "required": true,
+      "userEdit": true
+    },
+    "friendPassword": {
+      "type": "string",
+      "value": "",
+      "display": "Passwort Gruppe Friend",
+      "desc": "Bauen + Inventare oeffnen, kein kick/ban.",
+      "required": true,
+      "userEdit": true
+    },
+    "guestPassword": {
+      "type": "string",
+      "value": "",
+      "display": "Passwort Gruppe Guest",
+      "desc": "Nur joinen, keine Aenderungen.",
+      "required": true,
+      "userEdit": true
+    },
+    "visitorPassword": {
+      "type": "string",
+      "value": "",
+      "display": "Passwort Gruppe Visitor",
+      "desc": "Nur joinen, keine Aenderungen.",
+      "required": true,
+      "userEdit": true
+    }
+  },
+  "install": [
+    {
+      "type": "command",
+      "commands": [
+        "steamcmd +@sSteamCmdForcePlatformType windows +force_install_dir /pufferpanel +login anonymous +app_update 2278520 validate +quit"
+      ]
+    },
+    {
+      "type": "command",
+      "commands": [
+        "sh -c \"WINEPREFIX=/pufferpanel/.wine WINEARCH=win64 WINEDLLOVERRIDES='mscoree=d;mshtml=d' HOME=/pufferpanel wine64 wineboot --init\""
+      ]
+    }
+  ],
+  "run": {
+    "command": "xvfb-run -a wine64 enshrouded_server.exe",
+    "stopCode": 15,
+    "stdin": {
+      "type": "stdin"
+    },
+    "environmentVars": {
+      "HOME": "/pufferpanel",
+      "WINEPREFIX": "/pufferpanel/.wine",
+      "WINEARCH": "win64",
+      "WINEDEBUG": "-all",
+      "WINEDLLOVERRIDES": "mscoree=d;mshtml=d",
+      "ENSH_NAME": "${serverName}",
+      "ENSH_QUERY_PORT": "${queryPort}",
+      "ENSH_SLOT_COUNT": "${slotCount}",
+      "ENSH_PRESET": "${gameSettingsPreset}",
+      "ENSH_VOICE_CHAT": "${enableVoiceChat}",
+      "ENSH_TEXT_CHAT": "${enableTextChat}",
+      "ENSH_PW_ADMIN": "${adminPassword}",
+      "ENSH_PW_FRIEND": "${friendPassword}",
+      "ENSH_PW_GUEST": "${guestPassword}",
+      "ENSH_PW_VISITOR": "${visitorPassword}"
+    },
+    "pre": [
+      {
+        "type": "command",
+        "commands": [
+          "steamcmd +@sSteamCmdForcePlatformType windows +force_install_dir /pufferpanel +login anonymous +app_update 2278520 +quit"
+        ]
+      },
+      {
+        "type": "writefile",
+        "target": "update_config.jq",
+        "text": "def req(k): env[k] // error(\"missing environment variable \" + k);\ndef grp(gname; pwvar; perms):\n  if any(.userGroups[]; .name == gname)\n  then .userGroups |= map(if .name == gname then .password = req(pwvar) else . end)\n  else .userGroups += [{name: gname, password: req(pwvar)} + perms]\n  end;\n.name = req(\"ENSH_NAME\")\n| .saveDirectory //= \"./savegame\"\n| .logDirectory //= \"./logs\"\n| .ip //= \"0.0.0.0\"\n| .queryPort = (req(\"ENSH_QUERY_PORT\") | tonumber)\n| .slotCount = (req(\"ENSH_SLOT_COUNT\") | tonumber)\n| .voiceChatMode //= \"Proximity\"\n| .enableVoiceChat = (req(\"ENSH_VOICE_CHAT\") == \"true\")\n| .enableTextChat = (req(\"ENSH_TEXT_CHAT\") == \"true\")\n| .gameSettingsPreset = req(\"ENSH_PRESET\")\n| .tags //= []\n| .gameSettings //= {}\n| .bannedAccounts //= []\n| .userGroups //= []\n| grp(\"Admin\"; \"ENSH_PW_ADMIN\"; {canKickBan: true, canAccessInventories: true, canEditWorld: true, canEditBase: true, canExtendBase: true, reservedSlots: 1})\n| grp(\"Friend\"; \"ENSH_PW_FRIEND\"; {canKickBan: false, canAccessInventories: true, canEditWorld: true, canEditBase: true, canExtendBase: true, reservedSlots: 3})\n| grp(\"Guest\"; \"ENSH_PW_GUEST\"; {canKickBan: false, canAccessInventories: false, canEditWorld: false, canEditBase: false, canExtendBase: false, reservedSlots: 0})\n| grp(\"Visitor\"; \"ENSH_PW_VISITOR\"; {canKickBan: false, canAccessInventories: false, canEditWorld: false, canEditBase: false, canExtendBase: false, reservedSlots: 0})\n| if ([.userGroups[].password] | length) == ([.userGroups[].password] | unique | length) then . else error(\"group passwords must be unique\") end\n"
+      },
+      {
+        "type": "command",
+        "commands": [
+          "sh -c \"test -f /pufferpanel/enshrouded_server.json || echo '{}' > /pufferpanel/enshrouded_server.json\"",
+          "sh -c \"jq -f /pufferpanel/update_config.jq /pufferpanel/enshrouded_server.json > /pufferpanel/enshrouded_server.json.new && mv /pufferpanel/enshrouded_server.json.new /pufferpanel/enshrouded_server.json\""
+        ]
+      }
+    ],
+    "autostart": false,
+    "autorecover": true,
+    "autorestart": false
+  },
+  "environment": {
+    "type": "docker",
+    "image": "halalixy/enshrouded-server:latest",
+    "networkMode": "host",
+    "portBindings": []
+  },
+  "supportedEnvironments": [
+    {
+      "type": "docker",
+      "image": "halalixy/enshrouded-server:latest",
+      "networkMode": "host",
+      "portBindings": []
+    }
+  ],
+  "groups": [
+    {
+      "display": "Server",
+      "description": "Grundeinstellungen des Enshrouded-Servers",
+      "variables": [
+        "serverName",
+        "queryPort",
+        "slotCount",
+        "gameSettingsPreset",
+        "enableVoiceChat",
+        "enableTextChat"
+      ],
+      "order": 1
+    },
+    {
+      "display": "Passwoerter (Gruppen)",
+      "description": "Das Passwort beim Beitreten bestimmt die Gruppe und damit die Rechte. Die vier Passwoerter muessen unterschiedlich sein.",
+      "variables": [
+        "adminPassword",
+        "friendPassword",
+        "guestPassword",
+        "visitorPassword"
+      ],
+      "order": 2
+    }
+  ]
+}
