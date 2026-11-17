@@ -1,11 +1,10 @@
 {
     "type": "steam",
-    "id": "95d29928",
-    "display": "Conan Exiles",
+    "display": "Conan Exiles Enhanced",
     "data": {
         "admin_password": {
             "type": "string",
-            "value": "#4#3#2#1",
+            "value": "",
             "display": "Admin Password",
             "required": false,
             "userEdit": true
@@ -20,7 +19,7 @@
         },
         "max_nudity": {
             "type": "integer",
-            "value": 2,
+            "value": 0,
             "display": "Maximum Nudity",
             "desc": "0 = None, 1 = Partial, 2 = Full",
             "required": false,
@@ -37,13 +36,13 @@
             "type": "integer",
             "value": 7777,
             "display": "Port",
-            "desc": "IPv4 Server Port (UDP). Port+1 (UDP) might also be used by the game.",
+            "desc":  "IPv4 Server Port (UDP). Port+1 (UDP) might also be used by the game.",
             "required": true,
             "userEdit": false
         },
         "pvp_enabled": {
             "type": "boolean",
-            "value": true,
+            "value": false,
             "display": "PVP Enabled",
             "required": false,
             "userEdit": true
@@ -58,14 +57,14 @@
         },
         "server_message_of_the_day": {
             "type": "string",
-            "value": "Heya",
+            "value": "",
             "display": "Server Message Of The Day",
             "required": false,
             "userEdit": true
         },
         "server_name": {
             "type": "string",
-            "value": "Bela Bartok",
+            "value": "Conan Exiles Server",
             "display": "Server Name",
             "required": true,
             "userEdit": true
@@ -156,8 +155,8 @@
             {
                 "if": "manage_mods == true",
                 "type": "writefile",
-                "text": "",
-                "target": "ConanSandbox/Mods/modlist.txt"
+                "target": "ConanSandbox/Mods/modlist.txt",
+                "text": ""
             },
             {
                 "if": "manage_mods == true",
@@ -177,17 +176,17 @@
             },
             {
                 "type": "alterfile",
-                "replace": "[ServerSettings]\n",
-                "search": "\\A\\z",
                 "file": "ConanSandbox/Saved/Config/LinuxServer/ServerSettings.ini",
-                "regex": true
+                "regex": true,
+                "replace": "[ServerSettings]\n",
+                "search": "\\A\\z"
             },
             {
                 "type": "alterfile",
-                "search": "(?m)^(ServerName|ServerPassword|AdminPassword|ServerMessageOfTheDay|MaxNudity|PVPEnabled|ServerModList)=.*\\r?\\n?",
                 "file": "ConanSandbox/Saved/Config/LinuxServer/ServerSettings.ini",
                 "regex": true,
-                "replace": ""
+                "replace": "",
+                "search": "(?m)^(ServerName|ServerPassword|AdminPassword|ServerMessageOfTheDay|MaxNudity|PVPEnabled|ServerModList)=.*\\r?\\n?"
             },
             {
                 "type": "alterfile",
@@ -206,24 +205,24 @@
             },
             {
                 "type": "alterfile",
-                "regex": true,
-                "replace": "[OnlineSubsystem]",
                 "search": "\\A\\z",
-                "file": "ConanSandbox/Saved/Config/LinuxServer/Engine.ini"
+                "file": "ConanSandbox/Saved/Config/LinuxServer/Engine.ini",
+                "regex": true,
+                "replace": "[OnlineSubsystem]"
             },
             {
                 "type": "alterfile",
-                "file": "ConanSandbox/Saved/Config/LinuxServer/Engine.ini",
-                "regex": true,
                 "replace": "",
-                "search": "(?m)^(AdminPassword|ServerName)=.*\\r?\\n?"
+                "search": "(?m)^(AdminPassword|ServerName)=.*\\r?\\n?",
+                "file": "ConanSandbox/Saved/Config/LinuxServer/Engine.ini",
+                "regex": true
             },
             {
                 "type": "alterfile",
-                "file": "ConanSandbox/Saved/Config/LinuxServer/Engine.ini",
-                "regex": true,
                 "replace": "[OnlineSubsystem]\nServerName=${server_name}",
-                "search": "\\[OnlineSubsystem\\]"
+                "search": "\\[OnlineSubsystem\\]",
+                "file": "ConanSandbox/Saved/Config/LinuxServer/Engine.ini",
+                "regex": true
             }
         ],
         "stdin": {
@@ -231,25 +230,24 @@
         },
         "autostart": false,
         "autorecover": false,
-        "autorestart": false,
-        "post": []
+        "autorestart": false
     },
     "environment": {
         "type": "docker",
-        "networkName": "host",
-        "portBindings": [],
         "bindings": {},
         "containerRoot": "",
-        "image": "halalixy/steamcmd"
+        "image": "steamcmd/steamcmd:latest",
+        "networkName": "host",
+        "portBindings": []
     },
     "supportedEnvironments": [
         {
             "type": "docker",
-            "portBindings": [],
             "bindings": {},
             "containerRoot": "",
-            "image": "halalixy/steamcmd",
-            "networkName": "host"
+            "image": "steamcmd/steamcmd:latest",
+            "networkName": "host",
+            "portBindings": []
         }
     ],
     "requirements": {},
@@ -262,5 +260,6 @@
     "keepAlive": {
         "frequency": "",
         "command": ""
-    }
+    },
+    "name": "conan_exiles_enhanced"
 }
