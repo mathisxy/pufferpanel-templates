@@ -1,7 +1,7 @@
 {
   "name": "enshrouded-ubuntu",
   "type": "enshrouded",
-  "display": "Enshrouded Server",
+  "display": "Enshrouded - Dedicated Server (Docker)",
   "data": {
     "serverName": {
       "type": "string",
@@ -60,32 +60,32 @@
       "type": "string",
       "value": "",
       "display": "Admin Group Password",
-      "desc": "Kick/ban, open inventories, edit world and base.",
-      "required": true,
+      "desc": "Kick/ban, open inventories, edit world and base. Leave empty for no password.",
+      "required": false,
       "userEdit": true
     },
     "friendPassword": {
       "type": "string",
       "value": "",
       "display": "Friend Group Password",
-      "desc": "Open inventories, edit world and base. No kick/ban.",
-      "required": true,
+      "desc": "Open inventories, edit world and base. No kick/ban. Leave empty for no password.",
+      "required": false,
       "userEdit": true
     },
     "guestPassword": {
       "type": "string",
       "value": "",
       "display": "Guest Group Password",
-      "desc": "Join only, no changes.",
-      "required": true,
+      "desc": "Join only, no changes. Leave empty for no password.",
+      "required": false,
       "userEdit": true
     },
     "visitorPassword": {
       "type": "string",
       "value": "",
       "display": "Visitor Group Password",
-      "desc": "Join only, no changes.",
-      "required": true,
+      "desc": "Join only, no changes. Leave empty for no password.",
+      "required": false,
       "userEdit": true
     }
   },
@@ -114,17 +114,7 @@
       "WINEPREFIX": "/pufferpanel/.wine",
       "WINEARCH": "win64",
       "WINEDEBUG": "-all",
-      "WINEDLLOVERRIDES": "mscoree=d;mshtml=d",
-      "ENSH_NAME": "${serverName}",
-      "ENSH_QUERY_PORT": "${queryPort}",
-      "ENSH_SLOT_COUNT": "${slotCount}",
-      "ENSH_PRESET": "${gameSettingsPreset}",
-      "ENSH_VOICE_CHAT": "${enableVoiceChat}",
-      "ENSH_TEXT_CHAT": "${enableTextChat}",
-      "ENSH_PW_ADMIN": "${adminPassword}",
-      "ENSH_PW_FRIEND": "${friendPassword}",
-      "ENSH_PW_GUEST": "${guestPassword}",
-      "ENSH_PW_VISITOR": "${visitorPassword}"
+      "WINEDLLOVERRIDES": "mscoree=d;mshtml=d"
     },
     "pre": [
       {
@@ -136,12 +126,12 @@
       {
         "type": "writefile",
         "target": "update_config.jq",
-        "text": "def req(k): env[k] // error(\"missing environment variable \" + k);\ndef upd(k; v): if has(k) then .[k] = v else . end;\ndef pw(gname; v): if has(\"userGroups\") then .userGroups |= map(if .name == gname and has(\"password\") then .password = v else . end) else . end;\nupd(\"name\"; req(\"ENSH_NAME\"))\n| upd(\"queryPort\"; req(\"ENSH_QUERY_PORT\") | tonumber)\n| upd(\"slotCount\"; req(\"ENSH_SLOT_COUNT\") | tonumber)\n| upd(\"enableVoiceChat\"; req(\"ENSH_VOICE_CHAT\") == \"true\")\n| upd(\"enableTextChat\"; req(\"ENSH_TEXT_CHAT\") == \"true\")\n| upd(\"gameSettingsPreset\"; req(\"ENSH_PRESET\"))\n| pw(\"Admin\"; req(\"ENSH_PW_ADMIN\"))\n| pw(\"Friend\"; req(\"ENSH_PW_FRIEND\"))\n| pw(\"Guest\"; req(\"ENSH_PW_GUEST\"))\n| pw(\"Visitor\"; req(\"ENSH_PW_VISITOR\"))\n| if ([.userGroups[]? | .password // empty] | length) == ([.userGroups[]? | .password // empty] | unique | length) then . else error(\"group passwords must be unique\") end\n"
+        "text": "def pw(gname; v): if v != \"\" and v != null then if has(\"userGroups\") then .userGroups |= map(if .name == gname then .password = v else . end) else . end else . end;\n\nif . == {} then \n  {\n    \"name\": \"${serverName}\",\n    \"queryPort\": ${queryPort},\n    \"slotCount\": ${slotCount},\n    \"gameSettingsPreset\": \"${gameSettingsPreset}\",\n    \"enableVoiceChat\": ${enableVoiceChat},\n    \"enableTextChat\": ${enableTextChat},\n    \"userGroups\": [\n      {\"name\": \"Admin\", \"password\": \"${adminPassword}\"},\n      {\"name\": \"Friend\", \"password\": \"${friendPassword}\"},\n      {\"name\": \"Guest\", \"password\": \"${guestPassword}\"},\n      {\"name\": \"Visitor\", \"password\": \"${visitorPassword}\"}\n    ]\n  }\nelse\n  .name = \"${serverName}\"\n  | .queryPort = ${queryPort}\n  | .slotCount = ${slotCount}\n  | .enableVoiceChat = ${enableVoiceChat}\n  | .enableTextChat = ${enableTextChat}\n  | .gameSettingsPreset = \"${gameSettingsPreset}\"\n  | pw(\"Admin\", \"${adminPassword}\")\n  | pw(\"Friend\", \"${friendPassword}\")\n  | pw(\"Guest\", \"${guestPassword}\")\n  | pw(\"Visitor\", \"${visitorPassword}\")\n  | if ([.userGroups[].password | select(. != \"\")] | length) == ([.userGroups[].password | select(. != \"\")] | unique | length) then . else error(\"Group passwords must be unique\") end\nend\n"
       },
       {
         "type": "command",
         "commands": [
-          "sh -c \"if [ -f /pufferpanel/enshrouded_server.json ]; then jq -f /pufferpanel/update_config.jq /pufferpanel/enshrouded_server.json > /pufferpanel/enshrouded_server.json.new && mv /pufferpanel/enshrouded_server.json.new /pufferpanel/enshrouded_server.json; fi\""
+          "sh -c \"CFG=/pufferpanel/enshrouded_server.json; [ -f \\\"$CFG\\\" ] || echo '{}' > \\\"$CFG\\\"; jq -f /pufferpanel/update_config.jq /pufferpanel/enshrouded_server.json > /pufferpanel/enshrouded_server.json.new && mv /pufferpanel/enshrouded_server.json.new /pufferpanel/enshrouded_server.json\""
         ]
       }
     ],
@@ -166,7 +156,7 @@
   "groups": [
     {
       "display": "Server",
-      "description": "Written on start into existing keys of enshrouded_server.json. The game creates that file on its first start, so these apply from the second start.",
+      "description": "Settings for your Enshrouded server instance.",
       "variables": [
         "serverName",
         "queryPort",
@@ -179,7 +169,7 @@
     },
     {
       "display": "Group Passwords",
-      "description": "Only applied to groups of the same name that already exist in the config. All passwords must differ.",
+      "description": "Leave empty for no password. All active passwords must differ.",
       "variables": [
         "adminPassword",
         "friendPassword",
