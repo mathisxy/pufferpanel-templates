@@ -1,12 +1,12 @@
 {
-    "type": "steam",
+    "type": "enshrouded",
     "display": "Enshrouded Server",
     "data": {
         "adminPassword": {
             "type": "string",
             "value": "",
             "display": "Admin Group Password",
-            "desc": "Kick/ban, open inventories, edit world and base. Leave empty for no password.",
+            "desc": "Kick/ban, inventories, edit world and base.",
             "required": false,
             "userEdit": true
         },
@@ -28,7 +28,7 @@
             "type": "string",
             "value": "",
             "display": "Friend Group Password",
-            "desc": "Open inventories, edit world and base. No kick/ban. Leave empty for no password.",
+            "desc": "Inventories, edit world and base.",
             "required": false,
             "userEdit": true
         },
@@ -36,7 +36,7 @@
             "type": "option",
             "value": "Default",
             "display": "Difficulty Preset",
-            "desc": "With Custom, edit gameSettings in enshrouded_server.json. It is left untouched on start.",
+            "desc": "Custom: edit gameSettings in enshrouded_server.json yourself.",
             "required": true,
             "userEdit": true,
             "options": [
@@ -66,7 +66,7 @@
             "type": "string",
             "value": "",
             "display": "Guest Group Password",
-            "desc": "Join only, no changes. Leave empty for no password.",
+            "desc": "Join only, no changes.",
             "required": false,
             "userEdit": true
         },
@@ -74,15 +74,15 @@
             "type": "integer",
             "value": 15637,
             "display": "Query Port",
-            "desc": "The only port the server uses (UDP). Must be unique per server, e.g. 15637, 15638, ...",
+            "desc": "UDP, must be unique per server.",
             "required": true,
             "userEdit": true
         },
         "serverName": {
             "type": "string",
-            "value": "Enshrouded Server",
+            "value": "",
             "display": "Server Name",
-            "desc": "Shown in the in-game server list.",
+            "desc": "Shown in the server list.",
             "required": true,
             "userEdit": true
         },
@@ -90,7 +90,7 @@
             "type": "integer",
             "value": 16,
             "display": "Player Slots",
-            "desc": "Maximum number of players (1-16).",
+            "desc": "1-16.",
             "required": true,
             "userEdit": true
         },
@@ -98,7 +98,7 @@
             "type": "string",
             "value": "",
             "display": "Visitor Group Password",
-            "desc": "Join only, no changes. Leave empty for no password.",
+            "desc": "Join only, no changes.",
             "required": false,
             "userEdit": true
         }
@@ -106,7 +106,7 @@
     "groups": [
         {
             "display": "Server",
-            "description": "Settings for your Enshrouded server instance.",
+            "description": "",
             "variables": [
                 "serverName",
                 "queryPort",
@@ -119,7 +119,7 @@
         },
         {
             "display": "Group Passwords",
-            "description": "Leave empty for no password. Top to bottom: once a password is empty, all passwords below it must be empty too. The topmost empty group is open to everyone, the groups below it are removed from the config. All set passwords must differ.",
+            "description": "Empty means no password. Once one is empty, all below must be empty too. Set passwords must differ.",
             "variables": [
                 "adminPassword",
                 "friendPassword",
@@ -127,27 +127,35 @@
                 "visitorPassword"
             ],
             "order": 2
+        },
+        {
+            "if": "(adminPassword == '' && friendPassword != '') || (friendPassword == '' && guestPassword != '') || (guestPassword == '' && visitorPassword != '')",
+            "display": "Invalid Group Passwords",
+            "description": "A password is set below an empty one. The server will not start.",
+            "variables": [],
+            "order": 3
         }
     ],
     "install": [
         {
             "type": "command",
             "commands": [
-                "steamcmd +@sSteamCmdForcePlatformType windows +force_install_dir /pufferpanel +login anonymous +app_update 2278520 validate +quit"
-            ]
-        },
-        {
-            "type": "command",
-            "commands": [
-                "sh -c \"WINEPREFIX=/pufferpanel/.wine WINEARCH=win64 WINEDLLOVERRIDES='mscoree=d;mshtml=d' HOME=/pufferpanel wine64 wineboot --init\""
+                "steamcmd +@sSteamCmdForcePlatformType windows +force_install_dir /pufferpanel +login anonymous +app_info_print 2278520 +app_update 2278520 validate +quit"
             ]
         }
     ],
     "uninstall": null,
     "run": {
-        "command": "wine64 enshrouded_server.exe",
+        "command": "tini -- wine64 enshrouded_server.exe",
         "stopCode": 2,
         "pre": [
+            {
+                "if": "(adminPassword == '' && friendPassword != '') || (friendPassword == '' && guestPassword != '') || (guestPassword == '' && visitorPassword != '')",
+                "type": "command",
+                "commands": [
+                    "sh -c \"echo 'Invalid group passwords: a password is set below an empty one.'; exit 1\""
+                ]
+            },
             {
                 "type": "command",
                 "commands": [
@@ -157,17 +165,22 @@
             {
                 "type": "writefile",
                 "target": "update_config.jq",
-                "text": "# Group priority, top to bottom: Admin > Friend > Guest > Visitor.\n# An empty password means \"open to everyone\", so every group below an open\n# group can never be reached. Therefore:\n#   1. Once a password is empty, all passwords below it must be empty too (else error).\n#   2. Only the topmost empty group is written to the config, the groups below are removed.\ndef groups: [\n  {\"name\": \"Admin\",   \"password\": \"${adminPassword}\"},\n  {\"name\": \"Friend\",  \"password\": \"${friendPassword}\"},\n  {\"name\": \"Guest\",   \"password\": \"${guestPassword}\"},\n  {\"name\": \"Visitor\", \"password\": \"${visitorPassword}\"}\n];\n\n# Position of the topmost group with an empty password, null if every group has one.\ndef open_index: groups | map(.password == \"\") | index(true);\n\n# Rule 1: abort if a group below the open group still has a password.\ndef validate:\n  open_index as $i\n  | if $i != null and (groups | .[$i + 1:] | any(.password != \"\"))\n    then error(\"Group passwords: \" + groups[$i].name + \" is empty, so all groups below it must be empty too\")\n    else . end;\n\n# Rule 2: update, create or (below the open group) remove one group.\n# Other groups and the permissions of existing groups are left untouched.\ndef apply($g; $below_open):\n  if $below_open then .userGroups |= map(select(.name != $g.name))\n  elif any(.userGroups[]; .name == $g.name) then .userGroups |= map(if .name == $g.name then .password = $g.password else . end)\n  else .userGroups += [$g] end;\n\nvalidate\n| open_index as $open\n| .name = \"${serverName}\"\n| .queryPort = ${queryPort}\n| .slotCount = ${slotCount}\n| .enableVoiceChat = ${enableVoiceChat}\n| .enableTextChat = ${enableTextChat}\n| .gameSettingsPreset = \"${gameSettingsPreset}\"\n| .userGroups //= []\n| reduce (groups | to_entries[]) as {key: $n, value: $g} (.; apply($g; $open != null and $n > $open))\n"
+                "text": "# Groups top to bottom. The first group with an empty password is open to everyone,\n# so the groups below it are unreachable and get removed.\ndef groups: [\n  {\"name\": \"Admin\",   \"password\": ($ENV.ENSHROUDED_ADMIN_PASSWORD   // \"\")},\n  {\"name\": \"Friend\",  \"password\": ($ENV.ENSHROUDED_FRIEND_PASSWORD  // \"\")},\n  {\"name\": \"Guest\",   \"password\": ($ENV.ENSHROUDED_GUEST_PASSWORD   // \"\")},\n  {\"name\": \"Visitor\", \"password\": ($ENV.ENSHROUDED_VISITOR_PASSWORD // \"\")}\n];\n\n# Update the password of an existing group (keeping its permissions) or add the group.\ndef upsert($g):\n  if any(.[]; .name == $g.name)\n  then map(if .name == $g.name then .password = $g.password else . end)\n  else . + [$g] end;\n\n(groups | (map(.password == \"\") | index(true)) // length) as $open\n| (groups[$open + 1:] | map(.name)) as $removed\n| .name = ($ENV.ENSHROUDED_SERVER_NAME // \"\")\n| .queryPort = ${queryPort}\n| .slotCount = ${slotCount}\n| .enableVoiceChat = ${enableVoiceChat}\n| .enableTextChat = ${enableTextChat}\n| .gameSettingsPreset = \"${gameSettingsPreset}\"\n| .userGroups = (.userGroups // []\n    | map(select(.name | IN($removed[]) | not))\n    | reduce groups[:$open + 1][] as $g (.; upsert($g)))\n"
             },
             {
                 "type": "command",
                 "commands": [
-                    "sh -c \"CFG=/pufferpanel/enshrouded_server.json; [ -f \\\"$CFG\\\" ] || echo '{}' > \\\"$CFG\\\"; jq -f /pufferpanel/update_config.jq /pufferpanel/enshrouded_server.json > /pufferpanel/enshrouded_server.json.new && mv /pufferpanel/enshrouded_server.json.new /pufferpanel/enshrouded_server.json\""
+                    "sh -c \"cd /pufferpanel && { [ -f enshrouded_server.json ] || echo {} > enshrouded_server.json; } && jq -f update_config.jq enshrouded_server.json > enshrouded_server.json.new && mv enshrouded_server.json.new enshrouded_server.json\""
                 ]
             }
         ],
         "environmentVars": {
             "DISPLAY": "",
+            "ENSHROUDED_ADMIN_PASSWORD": "${adminPassword}",
+            "ENSHROUDED_FRIEND_PASSWORD": "${friendPassword}",
+            "ENSHROUDED_GUEST_PASSWORD": "${guestPassword}",
+            "ENSHROUDED_SERVER_NAME": "${serverName}",
+            "ENSHROUDED_VISITOR_PASSWORD": "${visitorPassword}",
             "HOME": "/pufferpanel",
             "WINEARCH": "win64",
             "WINEDEBUG": "-all",
@@ -183,9 +196,9 @@
     },
     "environment": {
         "type": "docker",
+        "networkName": "host",
         "portBindings": [],
-        "image": "halalixy/enshrouded-server:latest",
-        "networkName": "host"
+        "image": "halalixy/enshrouded-server:latest"
     },
     "supportedEnvironments": [
         {
